@@ -45,15 +45,21 @@ services:
     image: twosixlabsdart/java-kafka-consumer:latest
     hostname: java-kafka-consumer
     container_name: java-kafka-consumer
+    environment:
+      PROGRAM_ARGS: "compose"
 
   java-kafka-streams:
     image: twosixlabsdart/java-kafka-streams:latest
     hostname: java-kafka-streams
     container_name: java-kafka-streams
+    environment:
+      PROGRAM_ARGS: "compose"
  
   java-kafka-producer:
     image: twosixlabsdart/java-kafka-producer:latest
     hostname: java-kafka-producer
     container_name: java-kafka-producer
+    environment:
+      PROGRAM_ARGS: "compose"
 
 
