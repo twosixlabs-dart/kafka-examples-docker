@@ -1,0 +1,66 @@
+version: '3.7'
+
+x-defaults: &defaults
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: '1m'
+      max-file: '5'
+
+services:
+  
+  zookeeper-1:
+    image: zookeeper:3.4.9
+    hostname: zookeeper-1
+    ports:
+      - "2181:2181"
+    environment:
+      ZOO_MY_ID: 1
+      ZOO_PORT: 2181
+      ZOO_SERVERS: server.1=zookeeper-1:2888:3888
+    volumes:
+      - ./data/zookeeper-1/data:/data
+      - ./data/zookeeper-1/datalog:/datalog
+
+  kafka-broker-1:
+    image: confluentinc/cp-kafka:5.2.1
+    hostname: kafka-broker-1
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://kafka-broker-1:19092,LISTENER_DOCKER_EXTERNAL://${DOCKER_HOST_IP:-127.0.0.1}:9092
+      KAFKA_BROKER_ID: 1
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ZOOKEEPER_CONNECT: "zookeeper-1:2181"
+    volumes:
+      - ./data/kafka-broker-1:/var/lib/kafka/data
+    depends_on:
+      - zookeeper-1
+
+  auto-topic-provisioner:
+    image: twosixlabsdart/auto-topic-provisioner:latest
+    depends_on:
+      - kafka-broker-1
+
+  java-kafka-consumer:
+    image: twosixlabsdart/java-kafka-consumer:latest
+    hostname: java-kafka-consumer
+    container_name: java-kafka-consumer
+    volumes:
+      - ./data/java-kafka-consumer:/opt/app/data
+
+  java-kafka-streams:
+    image: twosixlabsdart/java-kafka-streams:latest
+    hostname: java-kafka-streams
+    container_name: java-kafka-streams
+ 
+  java-kafka-producer:
+    image: twosixlabsdart/java-kafka-producer:latest
+    hostname: java-kafka-producer
+    container_name: java-kafka-producer
+
+
