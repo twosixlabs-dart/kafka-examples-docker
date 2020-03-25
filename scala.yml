@@ -19,9 +19,6 @@ services:
       ZOO_MY_ID: 1
       ZOO_PORT: 2181
       ZOO_SERVERS: server.1=zookeeper-1:2888:3888
-    volumes:
-      - ./data/zookeeper-1/data:/data
-      - ./data/zookeeper-1/datalog:/datalog
 
   kafka-broker-1:
     image: confluentinc/cp-kafka:5.2.1
@@ -36,8 +33,6 @@ services:
       KAFKA_LOG4J_LOGGERS: "kafka.controller=INFO,kafka.producer.async.DefaultEventHandler=INFO,state.change.logger=INFO"
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_ZOOKEEPER_CONNECT: "zookeeper-1:2181"
-    volumes:
-      - ./data/kafka-broker-1:/var/lib/kafka/data
     depends_on:
       - zookeeper-1
 
@@ -45,3 +40,27 @@ services:
     image: twosixlabsdart/auto-topic-provisioner:latest
     depends_on:
       - kafka-broker-1
+
+  producer:
+    image: twosixlabsdart/scala-kafka-producer:latest
+    environment:
+      PROGRAM_ARGS: "compose"
+    depends_on:
+      - kafka-broker-1
+      - auto-topic-provisioner
+
+  stream-processor:
+    image: twosixlabsdart/scala-kafka-streams:latest
+    environment:
+      PROGRAM_ARGS: "compose"
+    depends_on:
+      - kafka-broker-1
+      - auto-topic-provisioner
+
+  consumer:
+    image: twosixlabsdart/scala-kafka-consumer:latest
+    environment:
+      PROGRAM_ARGS: "compose"
+    depends_on:
+      - kafka-broker-1
+      - auto-topic-provisioner
